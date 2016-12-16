@@ -248,7 +248,7 @@ int kore(int argc, char** argv) {
 	Kore::System::setName("TUD Game Technology - ");
 	Kore::System::setup();
 	Kore::WindowOptions options;
-	options.title = "Solution 9";
+	options.title = "Exercise 9";
 	options.width = width;
 	options.height = height;
 	options.x = 100;
