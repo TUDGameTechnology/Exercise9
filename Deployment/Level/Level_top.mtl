@@ -1,0 +1,13 @@
+# Blender MTL File: 'Level1.blend'
+# Material Count: 1
+
+newmtl phongE1SG
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.255000 0.255000 0.255000
+Ni 1.000000
+d 0.000000
+illum 0
+map_Kd F:\Dropbox\Dropbox\Projekte\Marbellous\level01\basicTiles6x6.png
+map_Bump F:\\marbellous01_normal.png -bm 1
