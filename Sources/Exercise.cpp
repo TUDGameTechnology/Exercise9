@@ -239,29 +239,14 @@ namespace {
 		/* Task P9.2: Play this sound when the goal is reached                   */
 		/************************************************************************/
 		winSound = new Sound("chipquest.wav");
-		Audio1::play(winSound);
-
+		
 		Graphics4::setTextureAddressing(tex, Graphics4::U, Graphics4::Repeat);
 		Graphics4::setTextureAddressing(tex, Graphics4::V, Graphics4::Repeat);
 	}
 }
 
 int kore(int argc, char** argv) {
-	Kore::System::setName("TUD Game Technology - ");
-	Kore::System::setup();
-	Kore::WindowOptions options;
-	options.title = "Exercise 9";
-	options.width = width;
-	options.height = height;
-	options.x = 100;
-	options.y = 100;
-	options.targetDisplay = -1;
-	options.mode = WindowModeWindow;
-	options.rendererOptions.depthBufferBits = 16;
-	options.rendererOptions.stencilBufferBits = 8;
-	options.rendererOptions.textureFormat = 0;
-	options.rendererOptions.antialiasing = 0;
-	Kore::System::initWindow(options);
+	Kore::System::init("Exercise 9", width, height);
 
 	Kore::Audio1::init();
 	Kore::Audio2::init();
