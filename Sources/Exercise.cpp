@@ -6,9 +6,10 @@
 #include <Kore/System.h>
 #include <Kore/Input/Keyboard.h>
 #include <Kore/Input/Mouse.h>
-#include <Kore/Audio/Mixer.h>
-#include <Kore/Graphics/Image.h>
-#include <Kore/Graphics/Graphics.h>
+#include <Kore/Audio1/Audio.h>
+#include <Kore/Graphics1/Image.h>
+#include <Kore/Graphics4/Graphics.h>
+#include <Kore/Graphics4/PipelineState.h>
 #include <Kore/Log.h>
 
 #include "ObjLoader.h"
@@ -22,9 +23,9 @@ namespace {
 	const int width = 512;
 	const int height = 512;
 	double startTime;
-	Shader* vertexShader;
-	Shader* fragmentShader;
-	Program* program;
+	Graphics4::Shader* vertexShader;
+	Graphics4::Shader* fragmentShader;
+	Graphics4::PipelineState* pipeline;
 
 	// controls
 	bool left = false;
@@ -62,9 +63,9 @@ namespace {
 	PhysicsWorld physics;
 	
 	// uniform locations - add more as you see fit
-	TextureUnit tex;
-	ConstantLocation pvLocation;
-	ConstantLocation mLocation;
+	Graphics4::TextureUnit tex;
+	Graphics4::ConstantLocation pvLocation;
+	Graphics4::ConstantLocation mLocation;
 
 	/************************************************************************/
 	/* Task P9.2 - Initialize the box collider                           */
@@ -78,12 +79,12 @@ namespace {
 		double deltaT = t - lastTime;
 		lastTime = t;
 
-		Kore::Audio::update();
+		Kore::Audio2::update();
 		
-		Graphics::begin();
-		Graphics::clear(Graphics::ClearColorFlag | Graphics::ClearDepthFlag, 0xff9999FF, 1.0f);
+		Graphics4::begin();
+		Graphics4::clear(Graphics4::ClearColorFlag | Graphics4::ClearDepthFlag, 0xff9999FF, 1.0f);
 
-		program->set();
+		Graphics4::setPipeline(pipeline);
 
 		// set the camera
 		targetCameraPosition = physics.physicsObjects[0]->GetPosition();
@@ -103,13 +104,13 @@ namespace {
 		View = mat4::lookAt(cameraPosition, lookAt, vec3(0, 1, 0)); 
 		PV = P * View;
 
-		Graphics::setMatrix(pvLocation, PV);
+		Graphics4::setMatrix(pvLocation, PV);
 
 		// Render the mesh objects
 		MeshObject** current = &objects[0];
 		while (*current != nullptr) {
 			// set the model matrix
-			Graphics::setMatrix(mLocation, (*current)->M);
+			Graphics4::setMatrix(mLocation, (*current)->M);
 			(*current)->render(tex);
 			++current;
 		} 
@@ -134,7 +135,7 @@ namespace {
 		// Render the meshes
 		while (*currentP != nullptr) {
 			(*currentP)->UpdateMatrix();
-			Graphics::setMatrix(mLocation, (*currentP)->Mesh->M);
+			Graphics4::setMatrix(mLocation, (*currentP)->Mesh->M);
 			(*currentP)->Mesh->render(tex);
 			++currentP;
 		}
@@ -147,11 +148,11 @@ namespace {
 		bool result = SpherePO->Collider.IntersectsWith(boxCollider);
 		if (result && !playedSound) {
 			playedSound = true;
-			Mixer::play(winSound);
+			Audio1::play(winSound);
 		}
 			
-		Graphics::end();
-		Graphics::swapBuffers();
+		Graphics4::end();
+		Graphics4::swapBuffers();
 	}
 
 	void SpawnSphere(vec3 Position, vec3 Velocity) {
@@ -170,22 +171,22 @@ namespace {
 
 	void handleKeyEvent(KeyCode code, bool isDown)
 	{
-		if (code == Key_Up || code == Key_W) {
+		if (code == KeyUp || code == KeyW) {
 			up = isDown;
-		} else if (code == Key_Down || code == Key_S) {
+		} else if (code == KeyDown || code == KeyS) {
 			down = isDown;
-		} else if (code == Key_Left || code == Key_A) {
+		} else if (code == KeyLeft || code == KeyA) {
 			right = isDown;
-		} else if (code == Key_Right || code == Key_D) {
+		} else if (code == KeyRight || code == KeyD) {
 			left = isDown;
 		}
 	}
 
-	void keyDown(KeyCode code, wchar_t character) {
+	void keyDown(KeyCode code) {
 		handleKeyEvent(code, true);
 	}
 
-	void keyUp(KeyCode code, wchar_t character) {
+	void keyUp(KeyCode code) {
 		handleKeyEvent(code, false);
 	}
 
@@ -201,23 +202,27 @@ namespace {
 	void init() {
 		FileReader vs("shader.vert");
 		FileReader fs("shader.frag");
-		vertexShader = new Shader(vs.readAll(), vs.size(), VertexShader);
-		fragmentShader = new Shader(fs.readAll(), fs.size(), FragmentShader);
+		vertexShader = new Graphics4::Shader(vs.readAll(), vs.size(), Graphics4::VertexShader);
+		fragmentShader = new Graphics4::Shader(fs.readAll(), fs.size(), Graphics4::FragmentShader);
 
 		// This defines the structure of your Vertex Buffer
-		VertexStructure structure;
-		structure.add("pos", Float3VertexData);
-		structure.add("tex", Float2VertexData);
-		structure.add("nor", Float3VertexData);
+		Graphics4::VertexStructure structure;
+		structure.add("pos", Graphics4::Float3VertexData);
+		structure.add("tex", Graphics4::Float2VertexData);
+		structure.add("nor", Graphics4::Float3VertexData);
 
-		program = new Program;
-		program->setVertexShader(vertexShader);
-		program->setFragmentShader(fragmentShader);
-		program->link(structure);
+		pipeline = new Graphics4::PipelineState;
+		pipeline->inputLayout[0] = &structure;
+		pipeline->inputLayout[1] = nullptr;
+		pipeline->vertexShader = vertexShader;
+		pipeline->fragmentShader = fragmentShader;
+		pipeline->depthMode = Graphics4::ZCompareLess;
+		pipeline->depthWrite = true;
+		pipeline->compile();
 
-		tex = program->getTextureUnit("tex");
-		pvLocation = program->getConstantLocation("PV");
-		mLocation = program->getConstantLocation("M");
+		tex = pipeline->getTextureUnit("tex");
+		pvLocation = pipeline->getConstantLocation("PV");
+		mLocation = pipeline->getConstantLocation("M");
 
 		objects[0] = new MeshObject("Level/Level.obj", "Level/basicTiles6x6.png", structure);
 		objects[1] = new MeshObject("Level/Level_yellow.obj", "Level/basicTiles3x3yellow.png", structure);
@@ -234,14 +239,10 @@ namespace {
 		/* Task P9.2: Play this sound when the goal is reached                   */
 		/************************************************************************/
 		winSound = new Sound("chipquest.wav");
-		Mixer::play(winSound);
+		Audio1::play(winSound);
 
-		Graphics::setRenderState(DepthTest, true);
-		Graphics::setRenderState(DepthTestCompare, ZCompareLess);
-		Graphics::setRenderState(DepthWrite, true);
-
-		Graphics::setTextureAddressing(tex, U, Repeat);
-		Graphics::setTextureAddressing(tex, V, Repeat);
+		Graphics4::setTextureAddressing(tex, Graphics4::U, Graphics4::Repeat);
+		Graphics4::setTextureAddressing(tex, Graphics4::V, Graphics4::Repeat);
 	}
 }
 
@@ -262,8 +263,8 @@ int kore(int argc, char** argv) {
 	options.rendererOptions.antialiasing = 0;
 	Kore::System::initWindow(options);
 
-	Kore::Mixer::init();
-	Kore::Audio::init();
+	Kore::Audio1::init();
+	Kore::Audio2::init();
 
 	init();
 
