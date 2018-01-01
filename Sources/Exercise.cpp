@@ -224,7 +224,7 @@ namespace {
 		pvLocation = pipeline->getConstantLocation("PV");
 		mLocation = pipeline->getConstantLocation("M");
 
-		objects[0] = new MeshObject("Level/Level.obj", "Level/basicTiles6x6.png", structure);
+		objects[0] = new MeshObject("Level/level.obj", "Level/basicTiles6x6.png", structure);
 		objects[1] = new MeshObject("Level/Level_yellow.obj", "Level/basicTiles3x3yellow.png", structure);
 		objects[2] = new MeshObject("Level/Level_red.obj", "Level/basicTiles3x3red.png", structure);
 
